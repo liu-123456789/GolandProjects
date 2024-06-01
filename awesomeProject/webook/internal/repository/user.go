@@ -20,9 +20,10 @@ type UserRepository struct {
 	cache *cache.UserCache
 }
 
-func NewUserRepository(dao *dao.UserDAO) *UserRepository {
+func NewUserRepository(dao *dao.UserDAO, c *cache.UserCache) *UserRepository {
 	return &UserRepository{
-		dao: dao,
+		dao:   dao,
+		cache: c,
 	}
 }
 
@@ -59,12 +60,20 @@ func (repo *UserRepository) UpdateUser(ctx context.Context, user domain.User) er
 }
 
 func (repo *UserRepository) FindUid(ctx context.Context, uid int64) (domain.User, error) {
-	u, err := repo.cache.Get(ctx, uid)
-	u, err = repo.dao.FindByUid(ctx, uid)
+	du, err := repo.cache.Get(ctx, uid)
+	if err == nil {
+		return du, nil
+	}
+	//只要err 不为nil 就要查数据库
+
+	u, err := repo.dao.FindByUid(ctx, uid)
 	if err != nil {
 		return domain.User{}, err
 	}
-	return repo.toFindByUid(u), nil
+	du = repo.toDomain(u)
+	err = repo.cache.Set(ctx, du)
+	//return repo.toFindByUid(du), nil
+	return du, nil
 }
 func (repo *UserRepository) toFindByUid(u dao.User) domain.User {
 	return domain.User{
