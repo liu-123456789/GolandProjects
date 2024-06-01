@@ -1,0 +1,15 @@
+#make工具一个个命令的单独执行
+
+#设置环境变量
+set GOOS=linux
+set GOARCH=arm
+go build -o webook
+
+#docker镜像
+docker build -t friday/webook:v0.0.1 .
+
+#docker删除
+docker rmi -f friday/webook:v0.0.1
+
+#查看镜像
+ docker images
